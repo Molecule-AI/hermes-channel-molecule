@@ -7,7 +7,7 @@ name = "hermes-channel-molecule"
 version = "0.1.0"
 description = "Hermes platform plugin for the Molecule channel — connects an external hermes-agent to the Molecule platform via the molecule-runtime A2A MCP server"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Molecule AI" }]
 dependencies = [
