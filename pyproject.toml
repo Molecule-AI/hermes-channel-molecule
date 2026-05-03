@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes-channel-molecule"
+version = "0.1.0"
+description = "Hermes platform plugin for the Molecule channel — connects an external hermes-agent to the Molecule platform via the molecule-runtime A2A MCP server"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Molecule AI" }]
+dependencies = [
+    "molecule-runtime>=0.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[project.urls]
+Homepage = "https://github.com/Molecule-AI/hermes-channel-molecule"
+Repository = "https://github.com/Molecule-AI/hermes-channel-molecule"
+
+[project.entry-points."hermes_agent.plugins"]
+molecule = "hermes_channel_molecule"
+
+[tool.setuptools.packages.find]
+include = ["hermes_channel_molecule*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+hermes_channel_molecule = ["plugin.yaml"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

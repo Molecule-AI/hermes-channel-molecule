@@ -1,0 +1,9 @@
+name: molecule
+version: 0.1.0
+description: "Molecule channel for hermes — connects to the molecule platform via the molecule-runtime A2A MCP server. Inbound canvas-user and peer-agent messages surface as hermes platform messages; outbound replies route back through send_message_to_user (canvas) or delegate_task (peer) MCP tools. Use this plugin when hermes runs OUTSIDE a molecule workspace (e.g. on a personal machine) and needs to peer with workspaces on the platform."
+author: "Molecule AI"
+requires_env:
+  - MOLECULE_WORKSPACE_ID
+  - MOLECULE_PLATFORM_URL
+provides_tools: []
+provides_hooks: []
