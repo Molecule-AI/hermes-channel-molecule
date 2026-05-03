@@ -40,7 +40,25 @@ from gateway.platforms.base import (
     MessageType,
     SendResult,
 )
-from hermes_cli.plugins import PluginPlatformIdentifier
+from gateway.config import Platform
+
+
+def _platform_identity(name: str):
+    """Pick the right Platform-shaped identity for the installed hermes.
+
+    Upstream #17751 made Platform an open enum (``Platform("molecule")``
+    works via ``_missing_()``). Legacy forks have a closed enum and ship
+    ``PluginPlatformIdentifier`` for plugin-supplied platforms instead.
+    Detect at import time so the same plugin works on both.
+    """
+    try:
+        return Platform(name)
+    except ValueError:
+        # Closed enum (legacy fork) — fall back to the fork's plugin
+        # identifier shape. Import lazily so a stock hermes-agent doesn't
+        # need this symbol to exist.
+        from hermes_cli.plugins import PluginPlatformIdentifier
+        return PluginPlatformIdentifier(name)
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +160,7 @@ class MoleculeAdapter(BasePlatformAdapter):
     """Hermes platform adapter for the molecule platform via A2A MCP."""
 
     def __init__(self, config) -> None:
-        super().__init__(config, PluginPlatformIdentifier(PLUGIN_NAME))
+        super().__init__(config, _platform_identity(PLUGIN_NAME))
 
         self._workspace_id = os.environ.get("MOLECULE_WORKSPACE_ID", "")
         self._platform_url = os.environ.get(

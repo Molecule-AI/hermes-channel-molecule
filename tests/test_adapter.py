@@ -32,43 +32,52 @@ _ADAPTER_PATH = _REPO_ROOT / "hermes_channel_molecule" / "adapter.py"
 
 
 def _load_adapter_module():
-    """Import adapter.py without going through hermes_cli.plugins.
+    """Import adapter.py without going through gateway/* + hermes_cli/*.
 
-    The real plugin loader supplies hermes_cli.plugins; in tests we stub
-    the only symbol the adapter needs (PluginPlatformIdentifier) so the
-    import doesn't pull the whole hermes-agent tree.
+    The real plugin loader pulls in gateway.config + gateway.platforms.base;
+    in tests we stub them so the import doesn't require the whole
+    hermes-agent tree.
     """
-    fake_plugins = type(sys)("hermes_cli.plugins")
-
-    class PluginPlatformIdentifier:
-        __slots__ = ("value",)
-
-        def __init__(self, name: str) -> None:
-            self.value = name
-
-        def __hash__(self) -> int:
-            return hash(("__plugin_platform__", self.value))
-
-        def __eq__(self, other: object) -> bool:
-            return (
-                isinstance(other, PluginPlatformIdentifier)
-                and self.value == other.value
-            )
-
-    fake_plugins.PluginPlatformIdentifier = PluginPlatformIdentifier
-    sys.modules.setdefault("hermes_cli", type(sys)("hermes_cli"))
-    sys.modules["hermes_cli.plugins"] = fake_plugins
-
-    # Stub gateway.platforms.base — the adapter only uses
-    # BasePlatformAdapter, MessageEvent, MessageType, SendResult.
+    # Stub gateway.config.Platform — the adapter constructs Platform("molecule")
+    # in __init__ to identify itself to the upstream platform_registry.
     fake_gateway = type(sys)("gateway")
-    fake_platforms = type(sys)("gateway.platforms")
-    fake_base = type(sys)("gateway.platforms.base")
+    fake_config = type(sys)("gateway.config")
 
     from dataclasses import dataclass, field
     from enum import Enum
     from typing import Optional, List, Dict, Any as TAny
     from datetime import datetime
+
+    class Platform(Enum):
+        # Open enum (per upstream #17751): Platform("molecule") creates a
+        # pseudo-member at runtime when not in the in-tree set. Empty
+        # enums can't be created in Python — seed with a sentinel that
+        # the adapter never references.
+        _SENTINEL = "__test_sentinel__"
+
+        @classmethod
+        def _missing_(cls, value):
+            if not isinstance(value, str) or not value.strip():
+                return None
+            value = value.strip().lower()
+            if value in cls._value2member_map_:
+                return cls._value2member_map_[value]
+            pseudo = object.__new__(cls)
+            pseudo._value_ = value
+            pseudo._name_ = value.upper().replace("-", "_")
+            cls._value2member_map_[value] = pseudo
+            cls._member_map_[pseudo._name_] = pseudo
+            return pseudo
+
+    fake_config.Platform = Platform
+    fake_gateway.config = fake_config
+    sys.modules["gateway"] = fake_gateway
+    sys.modules["gateway.config"] = fake_config
+
+    # Stub gateway.platforms.base — the adapter only uses
+    # BasePlatformAdapter, MessageEvent, MessageType, SendResult.
+    fake_platforms = type(sys)("gateway.platforms")
+    fake_base = type(sys)("gateway.platforms.base")
 
     class MessageType(Enum):
         TEXT = "text"
