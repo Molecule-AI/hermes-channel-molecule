@@ -165,6 +165,13 @@ _FAKE_MCP_SERVER = textwrap.dedent("""
         [json.loads(line) for line in os.environ.get("FAKE_INBOX", "").splitlines() if line.strip()]
     )
 
+    # If FAKE_ENV_DUMP is set, dump the env once at startup so tests
+    # can assert what was actually passed through to the subprocess.
+    dump_path = os.environ.get("FAKE_ENV_DUMP", "")
+    if dump_path:
+        with open(dump_path, "w") as f:
+            json.dump(dict(os.environ), f)
+
     def respond(req_id, result):
         sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": req_id, "result": result}) + "\\n")
         sys.stdout.flush()
@@ -258,6 +265,60 @@ async def test_connect_completes_handshake_and_starts_loops(monkeypatch, fake_mc
         assert a._poll_task is not None
         assert a._reader_task is not None
         assert a._fatal_error_message is None
+    finally:
+        await a.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_subprocess_env_includes_workspace_token(monkeypatch, fake_mcp_script, tmp_path):
+    """Regression: MOLECULE_WORKSPACE_TOKEN must reach the spawned MCP
+    subprocess. molecule_runtime.platform_auth.get_token reads it for
+    external runtimes (no /configs/.auth_token file). Without this
+    passthrough the runtime sends every outbound platform call
+    unauthenticated and the platform 401s.
+    """
+    env_dump = tmp_path / "env-dump.json"
+    a = _make_adapter(
+        monkeypatch,
+        fake_mcp_script,
+        env_extra={
+            "MOLECULE_WORKSPACE_TOKEN": "tok-abc-XYZ-123",
+            "FAKE_ENV_DUMP": str(env_dump),
+        },
+    )
+    try:
+        assert await a.connect()
+        assert env_dump.exists(), "fake server should have dumped env"
+        captured = json.loads(env_dump.read_text())
+        # Exact-equality on the token. Substring-in-repr would pass
+        # whether the var was passed through OR whether something else
+        # leaked the literal text.
+        assert captured.get("MOLECULE_WORKSPACE_TOKEN") == "tok-abc-XYZ-123"
+        # And confirm the canonical runtime env vars are also present.
+        assert captured.get("WORKSPACE_ID") == "ws-test-1234"
+        assert captured.get("PLATFORM_URL") == "http://platform:8080"
+    finally:
+        await a.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_subprocess_env_omits_workspace_token_when_unset(monkeypatch, fake_mcp_script, tmp_path):
+    """When MOLECULE_WORKSPACE_TOKEN isn't set in hermes's env we don't
+    fabricate one for the subprocess — the runtime then falls back to
+    /configs/.auth_token (in-container path) or sends headers without
+    Authorization (which the platform handles as anonymous heartbeat).
+    """
+    monkeypatch.delenv("MOLECULE_WORKSPACE_TOKEN", raising=False)
+    env_dump = tmp_path / "env-dump.json"
+    a = _make_adapter(
+        monkeypatch,
+        fake_mcp_script,
+        env_extra={"FAKE_ENV_DUMP": str(env_dump)},
+    )
+    try:
+        assert await a.connect()
+        captured = json.loads(env_dump.read_text())
+        assert "MOLECULE_WORKSPACE_TOKEN" not in captured
     finally:
         await a.disconnect()
     assert a.is_connected is False

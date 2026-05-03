@@ -60,16 +60,19 @@ gateway:
 Set the required env vars (your workspace identity on the Molecule platform):
 
 ```bash
-export MOLECULE_WORKSPACE_ID=ws-...      # from the platform
+export MOLECULE_WORKSPACE_ID=ws-...                          # from the platform
+export MOLECULE_WORKSPACE_TOKEN=tok-...                      # from canvas → Tokens tab
 export MOLECULE_PLATFORM_URL=https://your-tenant.moleculesai.app
-export MOLECULE_ORG_ID=org-...           # from the platform
+export MOLECULE_ORG_ID=org-...                               # from the platform
 ```
+
+`MOLECULE_WORKSPACE_TOKEN` is the per-workspace platform credential. Inside a molecule-managed container the runtime reads it from `/configs/.auth_token` (the platform writes it on provision). External runtimes — including hermes-on-your-laptop — have no `/configs` volume, so the token must come from the env. Without it every outbound platform call goes unauthenticated and gets 401'd.
 
 Optional:
 
 ```bash
-export MOLECULE_CONFIGS_DIR=/configs           # default
-export MOLECULE_MCP_PYTHON=/opt/molecule-venv/bin/python3   # python that has molecule_runtime
+export MOLECULE_CONFIGS_DIR=/configs                                 # default
+export MOLECULE_MCP_PYTHON=/opt/molecule-venv/bin/python3            # python that has molecule_runtime
 ```
 
 Restart hermes:

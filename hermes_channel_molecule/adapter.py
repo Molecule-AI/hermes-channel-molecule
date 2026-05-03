@@ -109,6 +109,17 @@ def check_molecule_requirements() -> bool:
             "%s: MOLECULE_WORKSPACE_ID is not set; cannot connect", PLUGIN_NAME
         )
         return False
+    if not os.environ.get("MOLECULE_WORKSPACE_TOKEN"):
+        # Soft-warn rather than block: the runtime will fall back to
+        # /configs/.auth_token if present (in-container scenario where
+        # this plugin is unusual but not impossible). External runs —
+        # the common case — need the env var.
+        logger.warning(
+            "%s: MOLECULE_WORKSPACE_TOKEN is not set; outbound platform "
+            "calls will be unauthenticated unless /configs/.auth_token "
+            "exists. Generate a token from the canvas → Tokens tab and "
+            "export MOLECULE_WORKSPACE_TOKEN=...", PLUGIN_NAME,
+        )
     python = _resolve_python()
     try:
         subprocess.run(
@@ -139,6 +150,13 @@ class MoleculeAdapter(BasePlatformAdapter):
         )
         self._org_id = os.environ.get("MOLECULE_ORG_ID", "")
         self._configs_dir = os.environ.get("MOLECULE_CONFIGS_DIR", "/configs")
+        # Per-workspace platform credential. Inside a molecule-managed
+        # container the runtime reads this from /configs/.auth_token (the
+        # platform writes it on provision); external runtimes (this case)
+        # have no /configs volume and must supply it via env. Without it
+        # every outbound platform call goes unauthenticated and gets
+        # rejected. See molecule_runtime.platform_auth.get_token.
+        self._workspace_token = os.environ.get("MOLECULE_WORKSPACE_TOKEN", "")
         self._python = _resolve_python()
 
         self._proc: Optional[asyncio.subprocess.Process] = None
@@ -169,6 +187,8 @@ class MoleculeAdapter(BasePlatformAdapter):
             env["MOLECULE_ORG_ID"] = self._org_id
         if self._configs_dir:
             env["CONFIGS_DIR"] = self._configs_dir
+        if self._workspace_token:
+            env["MOLECULE_WORKSPACE_TOKEN"] = self._workspace_token
 
         try:
             self._proc = await asyncio.create_subprocess_exec(
