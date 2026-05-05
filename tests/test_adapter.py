@@ -238,7 +238,7 @@ def _make_adapter(monkeypatch, fake_mcp_script: Path, *, env_extra: dict | None 
 
     monkeypatch.setenv("MOLECULE_WORKSPACE_ID", "ws-test-1234")
     monkeypatch.setenv("MOLECULE_PLATFORM_URL", "http://platform:8080")
-    monkeypatch.setenv("MOLECULE_ORG_ID", "org-test")
+    monkeypatch.delenv("MOLECULE_ORG_ID", raising=False)
     if env_extra:
         for k, v in env_extra.items():
             monkeypatch.setenv(k, v)
@@ -308,6 +308,22 @@ async def test_subprocess_env_includes_workspace_token(monkeypatch, fake_mcp_scr
         assert captured.get("PLATFORM_URL") == "http://platform:8080"
     finally:
         await a.disconnect()
+
+
+def test_adapter_does_not_track_molecule_org_id(monkeypatch, fake_mcp_script):
+    """Regression: the adapter must not carry a _org_id attribute.
+
+    molecule-ai-workspace-runtime>=0.1.110 doesn't read MOLECULE_ORG_ID —
+    auth uses Origin + Bearer + X-Workspace-ID and TenantGuard accepts
+    via the Origin-matches-Host path. Tracking a dead env var is
+    harmless at runtime but advertising it in install_hint sends
+    operators hunting for a value the platform doesn't surface.
+    """
+    a = _make_adapter(monkeypatch, fake_mcp_script)
+    assert not hasattr(a, "_org_id"), (
+        "MoleculeAdapter has a _org_id attribute — the dead MOLECULE_ORG_ID "
+        "input was reintroduced. Drop it: the runtime no longer reads it."
+    )
 
 
 @pytest.mark.asyncio

@@ -37,7 +37,7 @@ def register(ctx) -> None:
             required_env=["MOLECULE_WORKSPACE_ID", "MOLECULE_PLATFORM_URL"],
             install_hint=(
                 "set MOLECULE_WORKSPACE_ID, MOLECULE_WORKSPACE_TOKEN, "
-                "MOLECULE_PLATFORM_URL, MOLECULE_ORG_ID; ensure "
+                "MOLECULE_PLATFORM_URL; ensure "
                 "molecule-ai-workspace-runtime is on the python that "
                 "MOLECULE_MCP_PYTHON resolves to"
             ),

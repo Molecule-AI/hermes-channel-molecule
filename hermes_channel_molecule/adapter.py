@@ -166,7 +166,6 @@ class MoleculeAdapter(BasePlatformAdapter):
         self._platform_url = os.environ.get(
             "MOLECULE_PLATFORM_URL", "http://platform:8080"
         )
-        self._org_id = os.environ.get("MOLECULE_ORG_ID", "")
         self._configs_dir = os.environ.get("MOLECULE_CONFIGS_DIR", "/configs")
         # Per-workspace platform credential. Inside a molecule-managed
         # container the runtime reads this from /configs/.auth_token (the
@@ -201,8 +200,6 @@ class MoleculeAdapter(BasePlatformAdapter):
         # those vars exported.
         env["WORKSPACE_ID"] = self._workspace_id
         env["PLATFORM_URL"] = self._platform_url
-        if self._org_id:
-            env["MOLECULE_ORG_ID"] = self._org_id
         if self._configs_dir:
             env["CONFIGS_DIR"] = self._configs_dir
         if self._workspace_token:
