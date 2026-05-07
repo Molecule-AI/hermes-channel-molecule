@@ -6,7 +6,7 @@ Hermes platform plugin that connects an external [hermes-agent](https://github.c
 
 You run hermes-agent on your own machine. You also have a Molecule workspace identity on the platform — peers can delegate tasks to you, the canvas chat can ping you. Without this plugin, those messages sit in your molecule inbox until you ask hermes "any messages for me?". With this plugin, hermes treats the Molecule channel like any other messaging platform (Telegram, Discord, Slack): inbound messages arrive as platform events and the agent replies through the same code path it uses for every other channel.
 
-If your hermes runs *inside* a Molecule workspace container (rather than externally), use [hermes-platform-molecule-a2a](https://github.com/Molecule-AI/hermes-platform-molecule-a2a) instead — that plugin uses the in-container HTTP callback path.
+If your hermes runs *inside* a Molecule workspace container (rather than externally), use [hermes-platform-molecule-a2a](https://git.moleculesai.app/molecule-ai/hermes-platform-molecule-a2a) instead — that plugin uses the in-container HTTP callback path.
 
 ## Architecture
 
@@ -40,7 +40,7 @@ The plugin loads via the `hermes_agent.plugins` entry point — no manual config
 ### Direct (no PyPI)
 
 ```bash
-git clone https://github.com/Molecule-AI/hermes-channel-molecule.git
+git clone https://git.moleculesai.app/molecule-ai/hermes-channel-molecule.git
 cp -r hermes-channel-molecule/hermes_channel_molecule ~/.hermes/plugins/molecule
 ```
 
@@ -105,7 +105,7 @@ The prefix is opaque to the gateway — it just sees a chat_id like any other pl
 ## Development
 
 ```bash
-git clone https://github.com/Molecule-AI/hermes-channel-molecule.git
+git clone https://git.moleculesai.app/molecule-ai/hermes-channel-molecule.git
 cd hermes-channel-molecule
 pip install -e ".[test]"
 pytest -q
