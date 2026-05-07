@@ -21,8 +21,8 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Molecule-AI/hermes-channel-molecule"
-Repository = "https://github.com/Molecule-AI/hermes-channel-molecule"
+Homepage = "https://git.moleculesai.app/molecule-ai/hermes-channel-molecule"
+Repository = "https://git.moleculesai.app/molecule-ai/hermes-channel-molecule"
 
 [project.entry-points."hermes_agent.plugins"]
 molecule = "hermes_channel_molecule"
